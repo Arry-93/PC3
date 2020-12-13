@@ -30,6 +30,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		USpotLightComponent* FlashLight;
 
+
+
 public:
 	UPROPERTY(EditAnywhere, Category = Camera)
 		float BaseTurnRate;
@@ -47,6 +49,12 @@ public:
 	//flashlight turn on/off
 	void ToggleFlashLight();
 	bool lightState = true;
+	//camera control
+	void ZoomIn();
+	void ZoomOut();
+	float cameraSpeed;
+	bool isZoomIn;
+	bool isZoomOut;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

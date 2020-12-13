@@ -130,3 +130,15 @@ void ACharacterMovement::ToggleFlashLight()
 	}
 }
 
+void ACharacterMovement::ZoomIn()
+{
+	isZoomOut = false;
+	isZoomIn = true;
+}
+
+void ACharacterMovement::ZoomOut()
+{
+	isZoomOut = true;
+	isZoomIn = false;
+}
+

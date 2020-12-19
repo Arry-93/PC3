@@ -121,12 +121,12 @@ void ACharacterMovement::ToggleFlashLight()
 	if (lightState)
 	{
 		lightState = false;
-		FlashLight->SetVisibility(false, false);
+		FlashLight->SetVisibility(true, false);
 	}
 	else
 	{
 		lightState = true;
-		FlashLight->SetVisibility(true, false);
+		FlashLight->SetVisibility(false, false);
 	}
 }
 

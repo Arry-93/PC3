@@ -48,7 +48,7 @@ public:
 	void LookUpRate(float Rate);
 	//flashlight turn on/off
 	void ToggleFlashLight();
-	bool lightState = true;
+	bool lightState = false;
 	//camera control
 	void ZoomIn();
 	void ZoomOut();

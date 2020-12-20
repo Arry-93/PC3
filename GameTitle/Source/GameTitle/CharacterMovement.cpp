@@ -2,6 +2,8 @@
 
 
 #include "CharacterMovement.h"
+#include "InteractableObject.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 ACharacterMovement::ACharacterMovement()
@@ -80,28 +82,39 @@ void ACharacterMovement::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	//flashlight input
 	//turn on/off
 	PlayerInputComponent->BindAction("Torch", IE_Pressed, this, &ACharacterMovement::ToggleFlashLight);
+
+	//interact input
+	//analyze things
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ACharacterMovement::RayCast);
 }
 
+#pragma region Player Functions
 void ACharacterMovement::MoveForward(float Axis)
 {
-	//get rotation
-	FRotator Rotation = Controller->GetControlRotation();
-	//get y axis
-	FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-	//calculate direction to axis x
-	FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	AddMovementInput(Direction, Axis);
+	if (!isInteract)
+	{
+		//get rotation
+		FRotator Rotation = Controller->GetControlRotation();
+		//get y axis
+		FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+		//calculate direction to axis x
+		FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(Direction, Axis);
+	}
 }
 
 void ACharacterMovement::MoveRight(float Axis)
 {
-	//get rotation
-	FRotator Rotation = Controller->GetControlRotation();
-	//get y axis
-	FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-	//calculate direction to axis y
-	FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	AddMovementInput(Direction, Axis);
+	if (!isInteract)
+	{
+		//get rotation
+		FRotator Rotation = Controller->GetControlRotation();
+		//get y axis
+		FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+		//calculate direction to axis y
+		FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		AddMovementInput(Direction, Axis);
+	}
 }
 
 void ACharacterMovement::TurnRate(float Rate)
@@ -129,6 +142,7 @@ void ACharacterMovement::ToggleFlashLight()
 		FlashLight->SetVisibility(false, false);
 	}
 }
+#pragma endregion
 
 void ACharacterMovement::ZoomIn()
 {
@@ -140,5 +154,69 @@ void ACharacterMovement::ZoomOut()
 {
 	isZoomOut = true;
 	isZoomIn = false;
+}
+
+void ACharacterMovement::Interact()
+{
+	//cast is a special operator that forces one data type to be converted into another
+	//check object if hit by raycast is possessed
+	AInteractableObject* PossessableObject = Cast<AInteractableObject>(OutHit.GetActor());
+	if (PossessableObject && !PossessableObject->isCurrentlyPossessed)
+	{
+		if (!isInteract)
+		{
+			//save controller
+			if (!SavedCharacter)
+			{
+				SavedCharacter = GetController();
+			}
+
+			//save player
+			if (!SavedMainCharacter)
+			{
+				SavedMainCharacter = GetController();
+			}
+
+			//unpossess player
+			SavedCharacter->UnPossess();
+
+			//disable movement
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+			//possess interactable object
+			SavedCharacter->Possess(PossessableObject);
+
+			PossessableObject->isCurrentlyPossessed = true;
+			isInteract = true;
+		}
+	}
+}
+
+void ACharacterMovement::RayCast()
+{
+	FVector Start = FollowCamera->GetComponentLocation();
+	FVector ForwardVector = FollowCamera->GetForwardVector();
+
+	Start = Start + (ForwardVector + CameraBoom->TargetArmLength);
+	FVector End = Start + (ForwardVector * 100.f);
+
+	//ignore our character hit from the camera
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActor(this->GetOwner());
+	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
+
+	bool isHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams);
+
+	if (isHit && OutHit.bBlockingHit/*OutHit.GetActor()->ActorHasTag(TEXT("ObjectInteract"))*/)
+	{
+
+		UE_LOG(LogTemp, Warning, TEXT("Hit"));
+
+		Interact();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Not Hit"));
+	}
 }
 
